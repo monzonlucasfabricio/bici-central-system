@@ -1,17 +1,17 @@
 /**************************************************************************************************
- ** (c) Copyright 2019: Esteban VOLENTINI <evolentini@gmail.com>
+ ** (c) Copyright 2019: NAME <EMAIL>
  ** ALL RIGHTS RESERVED, DON'T USE OR PUBLISH THIS FILE WITHOUT AUTORIZATION
  *************************************************************************************************/
 
-#ifndef TAREAS_H   /*! @cond    */
-#define TAREAS_H   /*! @endcond */
+#ifndef EVENTS_DISTPACH   /*! @cond    */
+#define EVENTS_DISTPACH   /*! @endcond */
 
 /** @file leds.h
- ** @brief Declaraciones de la libreria para la gestion de los leds
+ ** @brief Library declaration for the leds test library.
  **
- **| REV | YYYY.MM.DD | Autor           | Descripción de los cambios                              |
+ **| REV | YYYY.MM.DD | Autor           | Changes                                                 |
  **|-----|------------|-----------------|---------------------------------------------------------|
- **|   1 | 2020.12.30 | lucasmonzonl    | Version inicial del archivo para manejo de leds         |
+ **|   1 | 2021.01.11 | lucasmonzonl    | Initial version                                         |
  **
  ** @addtogroup leds
  ** @{ */
@@ -20,13 +20,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "driver/gpio.h"
-#include "sdkconfig.h"
-#include "../../leds/include/leds.h"
+#include "esp_err.h"
 #include "../../espnow/include/espnow_app.h"
-#include "../../../main/main.h"
+#include "../../tasks/include/tasks.h"
 
 /* === Cabecera C++ ============================================================================ */
 #ifdef __cplusplus
@@ -34,20 +30,24 @@ extern "C" {
 #endif
 
 /* === Definicion y Macros ===================================================================== */
+#define QUEUE_SIZE_GENERIC 10
+#define QUEUE_TIME_WAIT 10
+
+xQueueHandle command_queue;
+xQueueHandle emergency_queue;
+xQueueHandle turn_queue;
+xQueueHandle moving_queue;
+
 
 /* === Declaraciones de tipos de datos ========================================================= */
 
 /* === Declaraciones de variables externas ===================================================== */
 
 /* === Declaraciones de funciones externas ===================================================== */
-void task_recv_msg(void *pvParameter);
-void task_event_handler(void *pvParameter);
-void task_sync_by_mac(void* pvParameter);
-void command_task(void *pvParameter);
-void moving_task(void *pvParameter);
-void turn_task(void *pvParameter);
-void emergency_task(void *pvParameter);
 
+esp_err_t f_task_dispatcher(event_t *evt);
+esp_err_t f_queues_for_events(void);
+esp_err_t f_event_task_creates(void);
 
 /* === Ciere de documentacion ================================================================== */
 #ifdef __cplusplus
@@ -56,4 +56,4 @@ void emergency_task(void *pvParameter);
 
 /** @} Final de la definición del modulo para doxygen */
 
-#endif   /* TAREAS_H */
+#endif   /* EVENTS_DISTPACH */

@@ -28,32 +28,102 @@
 
 /* === Definiciones de funciones externas ====================================================== */
 
-ledsparams_t createLed(uint8_t pinled, modes_s mode)
+esp_err_t createLed(uint8_t pinled, modes_s mode, ledsparams_t *led)
 {
     ledsparams_t newled = {
         .pinLed = pinled,
         .mode = mode,
     };
-    return newled;
+
+    memcpy(led, &newled, sizeof(ledsparams_t));
+
+    return ESP_OK;
 }
 
-uint8_t ledOutput(ledsparams_t *ledsparams)
+/* ----------- LEDS TASK SECTION -------------------------------------*/
+/* This will change location to tasks.c */
+
+void f_test_lights(void *pvParameter)
 {
-    ledsparams->mode = OUTPUT;
-    printf("Led OUTPUT\n");
-    return 1;
+    //printf("Tarea TEST creada\n");
+    while (true)
+    {
+        printf("------------> TEST ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
 }
-uint8_t ledInput(ledsparams_t *ledsparams)
+void f_left_lights(void *pvParameter)
 {
-    ledsparams->mode = INPUT;
-    printf("Led INPUT\n");
-    return 1;
+    //printf("Tarea LEFT creada\n");
+    while (true)
+    {
+        printf("------------> LEDS LEFT ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
+}
+void f_right_lights(void *pvParameter)
+{
+    //printf("Tarea RIGHT creada\n");
+    while (true)
+    {
+        printf("------------> LEDS RIGHT ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
 }
 
-uint8_t getMode(ledsparams_t *ledsparams)
+void f_moving(void *pvParameter)
 {
-    return ledsparams->mode;
+    //printf("Tarea Moving creada\n");
+    while (true)
+    {
+        printf("------------> Moving ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
 }
+
+
+void f_turn_right(void *pvParameter)
+{
+    //printf("Tarea TURN RIGHT creada\n");
+    while (true)
+    {
+        printf("------------> TURN RIGHT ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
+}
+
+void f_turn_left(void *pvParameter)
+{
+    //printf("Tarea TURN LEFT creada\n");
+    while (true)
+    {
+        printf("------------> TURN LEFT ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
+}
+
+void f_emergency(void *pvParameter)
+{
+    //printf("Tarea Emergency creada\n");
+    while (true)
+    {
+        printf("------------> EMERGENCY ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
+}
+
+void f_stopped(void *pvParameter)
+{
+    //printf("Tarea Emergency creada\n");
+    while (true)
+    {
+        printf("------------> STOPPED ON\n");
+        vTaskDelay(100/portTICK_PERIOD_MS);
+    }
+}
+
+
+
 
 /* === Ciere de documentacion ================================================================== */
 

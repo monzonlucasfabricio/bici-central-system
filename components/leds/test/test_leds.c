@@ -32,30 +32,13 @@ ledsparams_t led;
 /* === Definiciones de funciones externas ====================================================== */
 
 void setUp(void) {
-    led = createLed(LEDPIN,OUTPUT);
+    esp_err_t ret = createLed(LEDPIN,OUTPUT,&led);
 }
 
 void tearDown(void) {
 
 }
 
-/* This test will pass */
-void test_leds_pass(void) {
-    
-    uint8_t trueval = 1;
-    uint8_t res = ledOutput(&led);
-
-    TEST_ASSERT_EQUAL(trueval,res);
-}
-
-/* This test will fail */
-void test_leds_fail(void){
-
-    uint8_t res_1 = ledInput(&led);
-    uint8_t mode = getMode(&led);
-
-    TEST_ASSERT_EQUAL(OUTPUT,mode);
-}
 
 /* === Ciere de documentacion ================================================================== */
 

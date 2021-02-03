@@ -20,6 +20,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /* === Cabecera C++ ============================================================================ */
 #ifdef __cplusplus
@@ -27,6 +30,7 @@ extern "C" {
 #endif
 
 /* === Definicion y Macros ===================================================================== */
+
 typedef enum{
     INPUT,
     OUTPUT,
@@ -37,10 +41,17 @@ typedef struct{
     modes_s mode;
 }ledsparams_t;
 
-ledsparams_t createLed(uint8_t pinled, modes_s mode);
-uint8_t ledInput(ledsparams_t *ledsparams);
-uint8_t ledOutput(ledsparams_t *ledsparams);
-uint8_t getMode(ledsparams_t *ledsparams);
+esp_err_t f_create_led(uint8_t pinled, modes_s mode,ledsparams_t *led);
+
+void f_test_lights(void *pvParameter);
+void f_left_lights(void *pvParameter);
+void f_right_lights(void *pvParameter);
+void f_moving(void *pvParameter);
+void f_turn_right(void *pvParameter);
+void f_turn_left(void *pvParameter);
+void f_emergency(void *pvParameter);
+void f_stopped(void *pvParameter);
+
 
 /* === Declaraciones de tipos de datos ========================================================= */
 
