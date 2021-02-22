@@ -1,12 +1,14 @@
 #include "include/tasks.h"
 #include "../../components/events/include/events_dispatch.h"
 
-void f_delete_tasks(void);
+void f_time_to_delete_task(void);
+void flag_to_delete(void);
+void flag_to_restore(void);
 
 void task_recv_msg(void *pvParameter)
 {
-    char TAG[] = "TASK_RECV";
-    ESP_LOGI(TAG, "RECEIVED TASK INITIALIZED");
+    char TAG[] = "RECEIVE_TASK";
+    ESP_LOGI(TAG, "INITIALIZED");
     msg_t msg;
     msg_t *msg_recv = &msg;
 
@@ -16,8 +18,9 @@ void task_recv_msg(void *pvParameter)
         {
             if (xQueueReceive(rcv_queue, msg_recv, portMAX_DELAY) == pdTRUE)
             {
-                //printf("PUNTERO 2 : %p\n",msg_recv);
-                ESP_LOGI(TAG, "Mac received: %02X:%02X:%02X:%02X:%02X:%02X", msg_recv->mac_recv[0], msg_recv->mac_recv[1], msg_recv->mac_recv[2], msg_recv->mac_recv[3], msg_recv->mac_recv[4], msg_recv->mac_recv[5]);
+                /* Log MAC information */
+                ESP_LOGI(TAG, "MAC RECEIVED: %02X:%02X:%02X:%02X:%02X:%02X", msg_recv->mac_recv[0], msg_recv->mac_recv[1], msg_recv->mac_recv[2], msg_recv->mac_recv[3], msg_recv->mac_recv[4], msg_recv->mac_recv[5]);
+                
                 /* Parse data, send to a queue and check the error */
                 ESP_ERROR_CHECK(f_parser_data(msg_recv->msb_byte, msg_recv->lsb_byte, msg_recv->mac_recv));
             }
@@ -30,25 +33,10 @@ void task_recv_msg(void *pvParameter)
 
 void task_event_handler(void *pvParameter)
 {
-    char TAG[] = "TASK EVENT";
-    ESP_LOGI(TAG, "Event handler task initialized");
+    ESP_LOGI("EVENT HANDLER TASK", "INITIALIZED");
 
     event_t evt;
     event_t *evt_p = &evt;
-
-    /* Queues creates for every event */
-    esp_err_t ret_queues = f_queues_for_events();
-    if (ret_queues == ESP_OK)
-    {
-        ESP_LOGI(TAG, "Queue creation was successfull");
-    }
-
-    /* Tasks creates for every event */
-    esp_err_t ret_tasks = f_event_task_creates();
-    if (ret_tasks == ESP_OK)
-    {
-        ESP_LOGI(TAG, "Tasks creation was successfull");
-    }
 
     while (true)
     {
@@ -56,7 +44,7 @@ void task_event_handler(void *pvParameter)
         {
             if (xQueueReceive(evt_queue, evt_p, portMAX_DELAY) == pdTRUE)
             {
-                //printf("Evento: %i,%i\n", evt.evt_rcv, evt.evt_det);
+                /* Send to the respect QUEUE*/
                 f_task_dispatcher(&evt);
             }
         }
@@ -68,19 +56,20 @@ void task_event_handler(void *pvParameter)
 
 void task_sync_by_mac(void *pvParameter)
 {
-    ESP_LOGI("TASK SYNC", "Task initialized");
+    char TAG[] = "TASK SYNC";
+    ESP_LOGI(TAG, "Task initialized");
 
     /* Casting param */
     uint8_t *mac = ((uint8_t *)pvParameter);
 
     if (f_sync_new_device(mac) == ESP_OK)
     {
-        ESP_LOGI("TASK SYNC", "New device synchronized");
-        ESP_LOGI("TASK SYNC", "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        ESP_LOGI(TAG, "New device synchronized");
+        ESP_LOGI(TAG, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     }
     else
     {
-        ESP_LOGE("TASK SYNC", "ERROR");
+        ESP_LOGE(TAG, "ERROR");
     }
 
     /* Free memory. I don't need it anymore */
@@ -91,7 +80,7 @@ void task_sync_by_mac(void *pvParameter)
 void command_task(void *pvParameter)
 {
     char TAG[] = "COMMAND TASK";
-    ESP_LOGI(TAG, "Created");
+    ESP_LOGI(TAG, "CREATED");
 
     uint8_t command = 0;
 
@@ -99,37 +88,45 @@ void command_task(void *pvParameter)
     {
         if (xQueueReceive(command_queue, &command, portMAX_DELAY) == pdTRUE)
         {
-            //printf("RECIBI EL COMANDO: %02X\n", command);
+
+            f_time_to_delete_task();
+
             switch (command)
             {
             case LEFT_ON:
             {
-                f_delete_tasks();
-                BaseType_t ret1 = xTaskCreate(f_left_lights, "Left", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xLeftHandle);
-                if (ret1 != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO LEFT -> ON");
+                xExecutingTaskHandler = xTaskCreateStatic(f_left_lights, 
+                                                "Left", 
+                                                STACK_SIZE,
+                                                NULL,
+                                                EVENT_TASK_PRIORITY,
+                                                xStack,
+                                                &xTaskBuffer);
             }
             break;
             case RIGHT_ON:
             {
-                f_delete_tasks();
-                BaseType_t ret2 = xTaskCreate(f_right_lights, "Right", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xRightHandle);
-                if (ret2 != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO RIGHT -> ON");
+                xExecutingTaskHandler = xTaskCreateStatic(f_right_lights, 
+                                                "Right", 
+                                                STACK_SIZE,
+                                                NULL,
+                                                EVENT_TASK_PRIORITY,
+                                                xStack,
+                                                &xTaskBuffer);
             }
             break;
             case TEST_ON:
             {
-                f_delete_tasks();
-                BaseType_t ret3 = xTaskCreate(f_test_lights, "Test", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xTestHandle);
-                if (ret3 != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO TEST -> ON");
+                xExecutingTaskHandler = xTaskCreateStatic(f_test_lights, 
+                                                "Test", 
+                                                STACK_SIZE,
+                                                NULL,
+                                                EVENT_TASK_PRIORITY,
+                                                xStack,
+                                                &xTaskBuffer);
             }
             break;
 
@@ -137,20 +134,20 @@ void command_task(void *pvParameter)
             case RIGHT_OFF:
             case TEST_OFF:
             {
-                f_delete_tasks();
+                ESP_LOGI(TAG, "CHANGE TO LEFT,RIGHT OR TEST -> OFF");
+                f_time_to_delete_task();
             }
             break;
             default:
             {
-                ESP_LOGI(TAG, "Something went wrong");
-                f_delete_tasks();
+                ESP_LOGE(TAG, "SOMETHING WENT WRONG");
             }
             break;
             }
         }
         else
         {
-            ESP_LOGI(TAG, "No element on the queue");
+            ESP_LOGE(TAG, "THERE IS NO ELEMENT ON THE QUEUE");
         }
     }
 }
@@ -158,7 +155,7 @@ void command_task(void *pvParameter)
 void moving_task(void *pvParameter)
 {
     char TAG[] = "MOVING TASK";
-    ESP_LOGI(TAG, "Created");
+    ESP_LOGI(TAG, "CREATED");
 
     uint8_t command = 0;
 
@@ -166,26 +163,31 @@ void moving_task(void *pvParameter)
     {
         if (xQueueReceive(moving_queue, &command, portMAX_DELAY) == pdTRUE)
         {
+            f_time_to_delete_task();
             switch (command)
             {
             case MOVING:
             {
-                f_delete_tasks();
-                BaseType_t ret = xTaskCreate(f_moving, "Moving", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xMovingHandle);
-                if (ret != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO MOVING -> ON");
+                xExecutingTaskHandler = xTaskCreateStatic(f_moving, 
+                                                "Moving", 
+                                                STACK_SIZE,
+                                                NULL,
+                                                EVENT_TASK_PRIORITY,
+                                                xStack,
+                                                &xTaskBuffer);
             }
             break;
             case STOPPED:
             {
-                f_delete_tasks();
-                BaseType_t ret1 = xTaskCreate(f_stopped, "Stopped", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xStoppedHandle);
-                if (ret1 != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO STOPPED -> ON");
+                xExecutingTaskHandler = xTaskCreateStatic(f_stopped, 
+                                                "Stopped", 
+                                                STACK_SIZE,
+                                                NULL,
+                                                EVENT_TASK_PRIORITY,
+                                                xStack,
+                                                &xTaskBuffer);
             }
             break;
             }
@@ -199,33 +201,39 @@ void moving_task(void *pvParameter)
 void turn_task(void *pvParameter)
 {
     char TAG[] = "TURN TASK";
-    ESP_LOGI(TAG, "Created");
+    ESP_LOGI(TAG, "CREATED");
 
     uint8_t command = 0;
     while (true)
     {
         if (xQueueReceive(turn_queue, &command, portMAX_DELAY) == pdTRUE)
         {
+            f_time_to_delete_task();
+
             switch (command)
             {
             case TURN_RIGH:
             {
-                f_delete_tasks();
-                BaseType_t ret = xTaskCreate(f_turn_right, "Turn Right", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xTurnRightHandle);
-                if (ret != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO TURN RIGHT");
+                xExecutingTaskHandler = xTaskCreateStatic(f_turn_right, 
+                                                    "Turn_right", 
+                                                    STACK_SIZE,
+                                                    NULL,
+                                                    EVENT_TASK_PRIORITY,
+                                                    xStack,
+                                                    &xTaskBuffer);
             }
             break;
             case TURN_LEFT:
             {
-                f_delete_tasks();
-                BaseType_t ret1 = xTaskCreate(f_turn_left, "Turn Left", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xTurnLeftHandle);
-                if (ret1 != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO TURN LEFT");
+                xExecutingTaskHandler = xTaskCreateStatic(f_turn_left, 
+                                                    "Moving", 
+                                                    STACK_SIZE,
+                                                    NULL,
+                                                    EVENT_TASK_PRIORITY,
+                                                    xStack,
+                                                    &xTaskBuffer);
             }
             break;
             }
@@ -239,7 +247,7 @@ void turn_task(void *pvParameter)
 void emergency_task(void *pvParameter)
 {
     char TAG[] = "EMERGENCY TASK";
-    ESP_LOGI(TAG, "Created");
+    ESP_LOGI(TAG, "CREATED");
 
     uint8_t command = 0;
 
@@ -247,15 +255,18 @@ void emergency_task(void *pvParameter)
     {
         if (xQueueReceive(emergency_queue, &command, portMAX_DELAY) == pdTRUE)
         {
+            f_time_to_delete_task();
+
             if (command == EMERGENCY_D)
             {
-                f_delete_tasks();
-                ESP_LOGI(TAG, "EMERGENCY TRIGGERED");
-                BaseType_t ret = xTaskCreate(f_emergency, "Emergency", 2 * configMINIMAL_STACK_SIZE, NULL, 3, &xEmergencyHandle);
-                if (ret != pdPASS)
-                {
-                    ESP_LOGE(TAG, "Error creating task");
-                }
+                ESP_LOGI(TAG, "CHANGE TO EMERGENCY -> ON");
+                xExecutingTaskHandler = xTaskCreateStatic(f_emergency, 
+                                                    "Emergency", 
+                                                    STACK_SIZE,
+                                                    NULL,
+                                                    EVENT_TASK_PRIORITY,
+                                                    xStack,
+                                                    &xTaskBuffer);
             }
         }
         else
@@ -265,56 +276,27 @@ void emergency_task(void *pvParameter)
     }
 }
 
-void f_delete_tasks(void)
+void flag_to_delete(void)
 {
-    if (xTestHandle != NULL)
+    if (xSemaphoreTake(xNeoPixelFlag, portMAX_DELAY) == pdTRUE)
     {
-        vTaskDelete(xTestHandle);
-        xTestHandle = NULL;
-        //printf("Tarea test borrada\n");
+        flags.stopped_flag = HIGH;
+        xSemaphoreGive(xNeoPixelFlag);
     }
+}
 
-    if (xLeftHandle != NULL)
+void flag_to_restore(void)
+{
+    if (xSemaphoreTake(xNeoPixelFlag, portMAX_DELAY) == pdTRUE)
     {
-        vTaskDelete(xLeftHandle);
-        xLeftHandle = NULL;
-        //printf("Tarea left borrada\n");
+        flags.stopped_flag = LOW;
+        xSemaphoreGive(xNeoPixelFlag);
     }
-    if (xRightHandle != NULL)
-    {
-        vTaskDelete(xRightHandle);
-        xRightHandle = NULL;
-        //printf("Tarea right borrada\n");
-    }
-    if (xMovingHandle != NULL)
-    {
-        vTaskDelete(xMovingHandle);
-        xMovingHandle = NULL;
-        //printf("Tarea moving borrada\n");
-    }
-    if (xEmergencyHandle != NULL)
-    {
-        vTaskDelete(xEmergencyHandle);
-        xEmergencyHandle = NULL;
-        //printf("Tarea right borrada\n");
-    }
-    if (xTurnRightHandle != NULL)
-    {
-        vTaskDelete(xTurnRightHandle);
-        xTurnRightHandle = NULL;
-        //printf("Tarea right borrada\n");
-    }
-    if (xTurnLeftHandle != NULL)
-    {
-        vTaskDelete(xTurnLeftHandle);
-        xTurnLeftHandle = NULL;
-        //printf("Tarea left borrada\n");
-    }
+}
 
-    if (xStoppedHandle != NULL)
-    {
-        vTaskDelete(xStoppedHandle);
-        xStoppedHandle = NULL;
-        //printf("Tarea left borrada\n");
-    }
+void f_time_to_delete_task(void){
+    ESP_LOGI("DELETE TASK","DONE");
+    flag_to_delete();
+    vTaskDelay(TASK_TIME_TO_DELETE / portTICK_PERIOD_MS);
+    flag_to_restore();
 }

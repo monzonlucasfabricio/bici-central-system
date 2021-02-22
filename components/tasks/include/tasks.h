@@ -34,7 +34,8 @@ extern "C" {
 #endif
 
 /* === Definicion y Macros ===================================================================== */
-
+#define EVENT_TASK_PRIORITY 2
+#define TASK_TIME_TO_DELETE 50
 /* === Declaraciones de tipos de datos ========================================================= */
 
 /* === Declaraciones de variables externas ===================================================== */

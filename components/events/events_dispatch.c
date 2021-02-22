@@ -21,6 +21,10 @@
 /* == Declaraciones de tipos de datos internos ================================================= */
 
 /* === Definiciones de variables internas ====================================================== */
+static StaticQueue_t xCommand_static_queue;
+static StaticQueue_t xEmergency_static_queue;
+static StaticQueue_t xTurn_static_queue;
+static StaticQueue_t xMoving_static_queue;
 
 /* === Declaraciones de funciones internas ===================================================== */
 
@@ -93,15 +97,29 @@ esp_err_t f_task_dispatcher(event_t *evt)
 
 esp_err_t f_queues_for_events(void)
 {
+    command_queue = xQueueCreateStatic( QUEUE_SIZE_GENERIC,
+                                        sizeof(uint8_t),
+                                        Command_storage_area,
+                                        &xCommand_static_queue );
 
-    command_queue = xQueueCreate(QUEUE_SIZE_GENERIC, sizeof(uint8_t));
-    emergency_queue = xQueueCreate(QUEUE_SIZE_GENERIC, sizeof(uint8_t));
-    moving_queue = xQueueCreate(QUEUE_SIZE_GENERIC, sizeof(uint8_t));
-    turn_queue = xQueueCreate(QUEUE_SIZE_GENERIC, sizeof(uint8_t));
+    emergency_queue = xQueueCreateStatic( QUEUE_SIZE_GENERIC,
+                                        sizeof(uint8_t),
+                                        Emergency_storage_area,
+                                        &xEmergency_static_queue );
+
+    moving_queue = xQueueCreateStatic( QUEUE_SIZE_GENERIC,
+                                        sizeof(uint8_t),
+                                        Moving_storage_area,
+                                        &xMoving_static_queue );
+
+    turn_queue = xQueueCreateStatic( QUEUE_SIZE_GENERIC,
+                                        sizeof(uint8_t),
+                                        Turn_storage_area,
+                                        &xTurn_static_queue );
 
     if (command_queue == NULL || command_queue == NULL || command_queue == NULL || command_queue == NULL)
     {
-        ESP_LOGE("DISPATCHER", "Queue creation failed");
+        ESP_LOGE("QUEUES CRATION", "Failed");
         return ESP_FAIL;
     }
 
@@ -110,7 +128,6 @@ esp_err_t f_queues_for_events(void)
 
 esp_err_t f_event_task_creates(void)
 {
-    char TAG[] = "EVENT CREATION";
     BaseType_t ret1 = xTaskCreate(command_task, "Command", 4 * configMINIMAL_STACK_SIZE,NULL, 3, NULL);
     BaseType_t ret2 = xTaskCreate(emergency_task, "Emergency", 4 * configMINIMAL_STACK_SIZE,NULL, 3 , NULL);
     BaseType_t ret3 = xTaskCreate(turn_task, "Turn", 4 * configMINIMAL_STACK_SIZE,NULL, 3, NULL);
@@ -118,7 +135,7 @@ esp_err_t f_event_task_creates(void)
 
     if (ret1 != pdPASS || ret2 != pdPASS || ret3 != pdPASS || ret4 != pdPASS)
     {
-        ESP_LOGE(TAG, "Error creating events tasks");
+        ESP_LOGE("TASK ", "Error creating events tasks");
         while (true)
         {
         }

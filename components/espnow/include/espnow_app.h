@@ -82,7 +82,10 @@ xQueueHandle evt_queue;
 #define ESPNOW_WIFI_IF      ESP_IF_WIFI_AP
 #endif
 
-/* Turn enum*/
+/**
+ * @brief Event type enum for every event received that can be handled on this device
+ * 
+ */
 typedef enum event_rcv_t{
     COMMAND,
     EMERGENCY_R,
@@ -91,6 +94,10 @@ typedef enum event_rcv_t{
     FAIL_R,
 }event_rcv_t;
 
+/**
+ * @brief Event type enum for every subevent received that can be handled on this device
+ * 
+ */
 typedef enum event_detail_t{
     LEFT_OFF,
     LEFT_ON,
@@ -107,14 +114,20 @@ typedef enum event_detail_t{
     FAIL_D,
 }event_detail_t;
 
-/* Event structure */
+/**
+ * @brief General event structure that holds event and subevent
+ * 
+ */
 typedef struct event_t{
     event_detail_t evt_det;
     event_rcv_t evt_rcv;
     uint8_t mac[ESP_NOW_ETH_ALEN];
 }event_t;
 
-/* Data structure */
+/**
+ * @brief Message received structure, holds msb, lsb and mac address
+ * 
+ */
 typedef struct msg_t{
     uint8_t mac_recv[ESP_NOW_ETH_ALEN];
     uint8_t lsb_byte;
@@ -123,11 +136,39 @@ typedef struct msg_t{
 }msg_t;
 
 
-/* External functions declaration */
 
+/**
+ * @brief Wifi initialization funtion, it changes the base MAC address
+ * 
+ */
 void f_wifi_init(void);
+
+/**
+ * @brief Esp-now initializaction function
+ * 
+ * @return esp_err_t    -> ESP_OK if everything went OK
+ *                      -> ESP_FAIL if something went wrong
+ */
 esp_err_t f_esp_now_init(void);
+
+/**
+ * @brief Function that parse data from the message received on esp-now.
+ * 
+ * @param msb -> Most significant byte
+ * @param lsb -> Less significant byte
+ * @param mac -> Mac address received from the second-device
+ * @return esp_err_t    -> ESP_OK if the parser was ok and memory was available
+ *                      -> ESP_FAIL if memory wasn't available 
+ */
 esp_err_t f_parser_data(uint8_t msb, uint8_t lsb,uint8_t *mac);
+
+
+/**
+ * @brief Function that access to the Non Volatile Storage and changes the old MAC address for the new device.
+ * (TODO:This function should be in NVS component)
+ * @param mac -> New MAC address from the second-device
+ * @return esp_err_t 
+ */
 esp_err_t f_sync_new_device(uint8_t *mac);
 
 

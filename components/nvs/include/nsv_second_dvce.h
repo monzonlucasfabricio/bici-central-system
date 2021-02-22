@@ -37,11 +37,19 @@
 #include "esp_crc.h"
 #include "driver/gpio.h"
 
+/**
+ * @brief Enum for second device states
+ * 
+ */
 typedef enum state_t{
     SYNCHRONIZED,
     OUTOFSYNC
 }state_t;
 
+/**
+ * @brief 
+ * 
+ */
 typedef struct connection_state_t{
     state_t state;
     uint8_t mac[ESP_NOW_ETH_ALEN];

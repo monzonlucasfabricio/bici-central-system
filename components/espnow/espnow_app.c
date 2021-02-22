@@ -101,6 +101,7 @@ esp_err_t f_esp_now_init(void)
         }
     }
 
+    ESP_LOGI("QUEUE","RECV_QUEUE INITIALIZATION");
     /* Queue create */
     rcv_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(msg_t));
     if (rcv_queue == NULL)
@@ -109,6 +110,7 @@ esp_err_t f_esp_now_init(void)
         return ESP_FAIL;
     }
 
+    ESP_LOGI("QUEUE","EVT_QUEUE INITIALIZATION");
     evt_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(event_t));
     if (evt_queue == NULL)
     {
@@ -118,9 +120,6 @@ esp_err_t f_esp_now_init(void)
 
     /* Register callback function */
     esp_now_register_recv_cb(OnReceiveData);
-
-    /* Sync flag start false */
-    conn.flag_sync = false;
 
     return ESP_OK;
 }
@@ -189,6 +188,7 @@ esp_err_t f_parser_data(uint8_t msb,uint8_t lsb,uint8_t *mac){
             }
 
             else if (internal_check_mac(mac) == ESP_OK){
+                ESP_LOGI("QUEUE","SEND EVENT TO EVT_QUEUE");
                 /* Send msg to the queue */
                 if (xQueueSend(evt_queue, evt, portMAX_DELAY) != pdTRUE)
                 {

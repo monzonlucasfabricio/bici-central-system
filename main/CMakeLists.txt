@@ -3,6 +3,7 @@
 
 idf_component_register( SRCS            "main.c"
                                         "../components/leds/leds.c"
+                                        "../components/leds/neopixel.c"
                                         "../components/tasks/tasks.c"
                                         "../components/espnow/espnow_app.c"
                                         "../components/nvs/nsv_second_dvce.c"

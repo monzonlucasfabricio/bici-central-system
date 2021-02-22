@@ -33,6 +33,11 @@ extern "C" {
 #define QUEUE_SIZE_GENERIC 10
 #define QUEUE_TIME_WAIT 10
 
+uint8_t Command_storage_area[ QUEUE_SIZE_GENERIC * sizeof(uint8_t)];
+uint8_t Emergency_storage_area[ QUEUE_SIZE_GENERIC * sizeof(uint8_t)];
+uint8_t Turn_storage_area[ QUEUE_SIZE_GENERIC * sizeof(uint8_t)];
+uint8_t Moving_storage_area[ QUEUE_SIZE_GENERIC * sizeof(uint8_t)];
+
 xQueueHandle command_queue;
 xQueueHandle emergency_queue;
 xQueueHandle turn_queue;

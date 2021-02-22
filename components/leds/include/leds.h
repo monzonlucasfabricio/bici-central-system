@@ -23,6 +23,8 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "neopixel.h"
+#include "../../../main/main.h"
 
 /* === Cabecera C++ ============================================================================ */
 #ifdef __cplusplus
@@ -30,6 +32,12 @@ extern "C" {
 #endif
 
 /* === Definicion y Macros ===================================================================== */
+#define NEOPIXEL_PORT 14
+#define NR_LED 3
+#define NEOPIXEL_WS2812
+#define NEOPIXEL_RMT_CHANNEL RMT_CHANNEL_2
+
+pixel_settings_t px;
 
 typedef enum{
     INPUT,
@@ -42,6 +50,7 @@ typedef struct{
 }ledsparams_t;
 
 esp_err_t f_create_led(uint8_t pinled, modes_s mode,ledsparams_t *led);
+esp_err_t f_neo_leds_init(pixel_settings_t *pixel);
 
 void f_test_lights(void *pvParameter);
 void f_left_lights(void *pvParameter);
